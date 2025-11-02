@@ -89,7 +89,8 @@ int lum;
 int pvS_A, pvS_B, pvS_C;
 int S_A, S_B, S_C;
 int SelectedMode = 0;
-
+int count = 1;
+int exIsec = 0;
 
 uint32_t colorSec_1;
 uint32_t colorMin_1;
@@ -162,6 +163,17 @@ void loop() {
       constrHand(colorHour_1, colorHour_2, colorHour_3, colorHour_4, iHou, 'h', iMin);
 
       strip.show();
+
+      /* if (iSec == exIsec)
+      {
+        count = count + 1;
+        //Serial.print(count);
+      }
+      else
+      {
+        exIsec = iSec;
+        count = 1;
+      }; */
 
       break;
 
@@ -538,7 +550,6 @@ void constrHand(uint32_t color_1, uint32_t color_2, uint32_t color_3, uint32_t c
   int compHour = 0;  // per compensare le ore
 
   // in base a cosa voglio rappresentare, devo calcolare l'indirizzo di inizio
-  // per il debug
 
   switch (sType) {
     case 's':
@@ -558,18 +569,24 @@ void constrHand(uint32_t color_1, uint32_t color_2, uint32_t color_3, uint32_t c
 
   // calcolo le posizioni dei led
   ledStart = (nSector * ledCalc) + compHour;
-  if (ledStart > 419) {
+/*   if (ledStart > 419) {
     ledStart = ledStart - 420;
-  }
+  } */
+  ledStart = switchPixel420(ledStart);
   ledFinal = ledStart + ledLenght;
 
 
   strip.setPixelColor(ledStart, color_1);
-  strip.setPixelColor(ledStart + 1, color_2);
-  strip.setPixelColor(ledStart + 2, color_3);
-  for (int i = ledStart + 3; i < ledFinal; i++) {
-    strip.setPixelColor(i, color_4);
+  strip.setPixelColor(switchPixel420(ledStart + 1), color_2);
+  strip.setPixelColor(switchPixel420(ledStart + 2), color_3);
+  for (int i = switchPixel420(ledStart + 3); i < ledFinal; i++) {
+    strip.setPixelColor(switchPixel420(i), color_4);
   }
+ 
+ arrowHand (ledFinal,color_2, color_3, color_4, sType);
+ 
+
+
 }
 
 
@@ -673,6 +690,56 @@ uint32_t Wheel(byte WheelPos, byte brightness, byte whiteShift, byte whiteShiftW
   return strip.Color(red, green, blue);
 }
 
+void arrowHand (int ledFinal, uint32_t color_2, uint32_t color_3, uint32_t color_4, char sType){
+
+  uint32_t colorStamp_1;
+  uint32_t colorStamp_2;
+
+  switch (sType) {
+    case 's':
+      colorStamp_1 = color_4;
+      colorStamp_2 = color_4;
+        strip.setPixelColor(ledFinal - 3, strip.Color(0, 0, 0));
+  strip.setPixelColor(ledFinal - 4, strip.Color(0, 0, 0));
+  strip.setPixelColor(ledFinal - 5, strip.Color(0, 0, 0));
+      break;
+    case 'm':
+      colorStamp_1 = color_3;
+      colorStamp_2 = color_4;
+        strip.setPixelColor(ledFinal - 3, strip.Color(0, 0, 0));
+  strip.setPixelColor(ledFinal - 4, strip.Color(0, 0, 0));
+
+      break;
+    case 'h':
+      colorStamp_1 = color_2;
+      colorStamp_2 = color_3;
+        strip.setPixelColor(ledFinal - 3, strip.Color(0, 0, 0));
+      break;
+  }
+
+  strip.setPixelColor(switchPixel420(ledFinal + 4), colorStamp_1);
+  strip.setPixelColor(switchPixel420(ledFinal + 5), colorStamp_2);
+  strip.setPixelColor(switchPixel420(ledFinal + 11), colorStamp_1);
+  strip.setPixelColor(switchPixel420(ledFinal - 9), colorStamp_2);
+  strip.setPixelColor(switchPixel420(ledFinal - 10), colorStamp_1);
+  strip.setPixelColor(switchPixel420(ledFinal - 17), colorStamp_1);
+
+}
+
+int switchPixel420 (int nPixel){
+  int ledPixelOut = nPixel;
+
+  // gestosto la lancetta che va oltre
+  if (nPixel > 419) {
+    ledPixelOut = nPixel - 420;
+  }
+
+  // gestisco la lancetta che va in negativo
+  if(nPixel < 0){
+    ledPixelOut = nPixel + 420;
+  }
+  return ledPixelOut;
+}
 
 void calcRainbowCycle(int secPast){
   // il ciclo parte una volta al secondo
