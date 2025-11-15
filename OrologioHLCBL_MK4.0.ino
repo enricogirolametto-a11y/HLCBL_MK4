@@ -132,7 +132,7 @@ void loop() {
   lum = calcLum(pinPRes_DX, pinPRes_SX, iSec);
 
   gestioneIlluminazioneColore(lum, SelectedMode, iSec);
-  //Serial.println(lum);
+
   // capisco se siamo in un giorno festivo
   //gayMode = verificaGiornoMese(iSec, iMin);
   //gayMode = false;
@@ -167,7 +167,7 @@ void loop() {
       /* if (iSec == exIsec)
       {
         count = count + 1;
-        //Serial.print(count);
+
       }
       else
       {
@@ -247,54 +247,7 @@ void gestioneIlluminazioneColore(int lumiCalc, int typeMode, int secPast) {
     lumiCalc = lumiMaxCalc;
   }
 
-
-  // do una serie di regole per cui la luminosità saraà affiadata ad uno swith case
-  switch (lumiCalc) {
-    case 0 ... 5:
-      lumiRealCalc = 3;
-      break;
-    case 6:
-      lumiRealCalc = 6;
-      break;
-    case 7:
-      lumiRealCalc = 12;
-      break;
-    case 8:
-      lumiRealCalc = 18;
-      break;
-    case 9:
-      lumiRealCalc = 24;
-      break;
-    case 10:
-      lumiRealCalc = 30;
-      break;
-    case 11:
-      lumiRealCalc = 36;
-      break;
-    case 12:
-      lumiRealCalc = 42;
-      break;
-    case 13:
-      lumiRealCalc = 48;
-      break;
-    case 14:
-      lumiRealCalc = 54;
-      break;
-    case 15 ... 17:
-      lumiRealCalc = 60;
-      break;
-    case 18 ... 21:
-      lumiRealCalc = 150;
-      break;
-    case 22 ... 25:
-      lumiRealCalc = 255;
-      break;
-    default:
-      lumiRealCalc = 50;
-  }
-
-
-
+lumiRealCalc = lumiCalc;
 
   // 1/3 calc
   lumiCalc_13 = lumiRealCalc / 3;
@@ -372,7 +325,8 @@ void gestioneIlluminazioneColore(int lumiCalc, int typeMode, int secPast) {
   colorQuad_13 = strip.Color(lumiRealCalcQUAD_13, lumiRealCalcQUAD_13, lumiRealCalcQUAD_13);
   colorQuad_23 = strip.Color(lumiRealCalcQUAD_23, lumiRealCalcQUAD_23, lumiRealCalcQUAD_23);
   colorQuadAura = strip.Color(lumiRealCalcAuraQUAD, lumiRealCalcAuraQUAD, lumiRealCalcAuraQUAD);
-/* TODO DA TOGLIERE
+
+
   // se in modifica, revisiono i colori dei led in modifica
   switch (typeMode) {
     case 1:  //s
@@ -394,7 +348,7 @@ void gestioneIlluminazioneColore(int lumiCalc, int typeMode, int secPast) {
       colorHour_4 = strip.Color(255, 0, 255);
       break;
   }
-  */
+  
 }
 
 
@@ -466,46 +420,63 @@ int calcMoreBig(int valLum1, int valLum2, int adjustMin) {
 
 int calcLum(int pin1, int pin2, int secSwitch) {
   // serve per fare la media delle luminosità in entrata e quindi regolare di conseguenza la luminosità dell'orologio
-  int calcMedia;
+  int calcMedia = 1;
+  int calcMediaFinal;
   int adjustMin = 1;  // SERVE PER ASSICURARE IL VALORE MINIMO DI LUMINOSITà; dallo 0 al 1 sarà sempre il minimo
   int deltaLum = 2;   // il delta di intervento per cambiare la media
   int valLum1;
   int valLum2;
   int calcMedia_prop = 0;
-  int adjustLum2 = 150;
 
   valLum1 = analogRead(pin1);
   valLum2 = analogRead(pin2);
-  valLum2 = valLum2 + adjustLum2;
-
+  //valLum2 = valLum2 + adjustLum2;
 
 
   calcMediaTOT = calcMoreBig(valLum1, valLum2, adjustMin);
-  numCalcMedia = numCalcMedia + 1;
+  
 
   if (secSwitch != secSwitch_ex) {
-    calcMedia_prop = calcMediaTOT / numCalcMedia;
-
-
+    calcMedia_prop = calcMediaTOT;
 
     if (calcMedia_prop < 1) {  //la luminosità minima assoluta
       calcMedia_prop = 1;
-    }
+    };
 
     if ((calcMedia + deltaLum) < calcMedia_prop || (calcMedia - deltaLum) > calcMedia_prop) {
       calcMedia = calcMedia_prop;
-      if (calcMedia <= 0) {
-        calcMedia = 1;
-      }
-    }
+    };
+    if (calcMedia <= 1) {
+      calcMedia = 1;
+    };
+    Serial.println(calcMedia);
+    // gestisco con il dato real
+    // do una serie di regole per cui la luminosità sarà affiadata ad uno swith case
+    switch (calcMedia) {
+      case 1 ... 11:
+        calcMediaFinal = 3;
+        break;
+      case 12 ... 30:
+        calcMediaFinal = 6;
+        break;
+      case 31 ... 50:
+        calcMediaFinal = 10;
+        break;
+      case 51 ... 90:
+        calcMediaFinal = 20;
+        break;
+      case 91 ... 150:
+        calcMediaFinal = 30;
+        break;
+      default:
+        calcMediaFinal = 50;
+    };
 
     secSwitch_ex = secSwitch;
     numCalcMedia = 0;
   }
 
-
-
-  return calcMedia;
+  return calcMediaFinal;
 }
 
 int Calc12H(int HourOrig) {
@@ -583,7 +554,8 @@ void constrHand(uint32_t color_1, uint32_t color_2, uint32_t color_3, uint32_t c
     strip.setPixelColor(switchPixel420(i), color_4);
   }
  
- arrowHand (ledFinal,color_2, color_3, color_4, sType);
+
+ //arrowHand (ledFinal,color_2, color_3, color_4, sType);
  
 
 
@@ -699,30 +671,29 @@ void arrowHand (int ledFinal, uint32_t color_2, uint32_t color_3, uint32_t color
     case 's':
       colorStamp_1 = color_4;
       colorStamp_2 = color_4;
-        strip.setPixelColor(ledFinal - 3, strip.Color(0, 0, 0));
-  strip.setPixelColor(ledFinal - 4, strip.Color(0, 0, 0));
-  strip.setPixelColor(ledFinal - 5, strip.Color(0, 0, 0));
+      strip.setPixelColor(ledFinal - 3, strip.Color(0, 0, 0));
+      strip.setPixelColor(ledFinal - 4, strip.Color(0, 0, 0));
+      strip.setPixelColor(ledFinal - 5, strip.Color(0, 0, 0));
       break;
     case 'm':
       colorStamp_1 = color_3;
       colorStamp_2 = color_4;
         strip.setPixelColor(ledFinal - 3, strip.Color(0, 0, 0));
-  strip.setPixelColor(ledFinal - 4, strip.Color(0, 0, 0));
-
+        strip.setPixelColor(ledFinal - 4, strip.Color(0, 0, 0));
       break;
     case 'h':
       colorStamp_1 = color_2;
       colorStamp_2 = color_3;
-        strip.setPixelColor(ledFinal - 3, strip.Color(0, 0, 0));
+      strip.setPixelColor(ledFinal - 3, strip.Color(0, 0, 0));
       break;
   }
 
-  strip.setPixelColor(switchPixel420(ledFinal + 4), colorStamp_1);
+  //strip.setPixelColor(switchPixel420(ledFinal + 4), colorStamp_1);
   strip.setPixelColor(switchPixel420(ledFinal + 5), colorStamp_2);
-  strip.setPixelColor(switchPixel420(ledFinal + 11), colorStamp_1);
+  //strip.setPixelColor(switchPixel420(ledFinal + 11), colorStamp_1);
   strip.setPixelColor(switchPixel420(ledFinal - 9), colorStamp_2);
-  strip.setPixelColor(switchPixel420(ledFinal - 10), colorStamp_1);
-  strip.setPixelColor(switchPixel420(ledFinal - 17), colorStamp_1);
+  //strip.setPixelColor(switchPixel420(ledFinal - 10), colorStamp_1);
+  //strip.setPixelColor(switchPixel420(ledFinal - 17), colorStamp_1);
 
 }
 
